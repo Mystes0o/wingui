@@ -1,6 +1,7 @@
 from typing import Union
 from loguru import logger
 
+
 class Size(object):
     """
         Size.ZERO      :一个width,height均为0的Size
@@ -12,6 +13,7 @@ class Size(object):
         Size.height :Size的高
         支持 +,-,*,/,==操作
     """
+
     def __init__(self, width: Union[float, int], height: Union[int, float]):
         self.width = width
         self.height = height
@@ -48,28 +50,28 @@ class Size(object):
 
     def __lt__(self, other):
         if type(other) == Size:
-            return self.width*self.height < other.width*other.height
+            return self.width * self.height < other.width * other.height
         else:
             logger.error('目标对象不是Size类,请检查')
             return False
 
     def __gt__(self, other):
         if type(other) == Size:
-            return self.width*self.height > other.width*other.height
+            return self.width * self.height > other.width * other.height
         else:
             logger.error('目标对象不是Size类,请检查')
             return False
 
     def __le__(self, other):
         if type(other) == Size:
-            return self.width*self.height <= other.width*other.height
+            return self.width * self.height <= other.width * other.height
         else:
             logger.error('目标对象不是Size类,请检查')
             return False
 
     def __ge__(self, other):
         if type(other) == Size:
-            return self.width*self.height >= other.width*other.height
+            return self.width * self.height >= other.width * other.height
         else:
             logger.error('目标对象不是Size类,请检查')
             return False
@@ -77,6 +79,7 @@ class Size(object):
 
 Size.ZERO = Size(0, 0)
 Size.INVALID = Size(-1, -1)
+
 
 class Point(object):
     """
@@ -89,6 +92,7 @@ class Point(object):
         Point.y :y坐标
         支持 +,-,*,/,==操作
     """
+
     def __init__(self, x: Union[int, float], y: Union[int, float],
                  anchor_mode: str = 'Middle', anchor_x: int = 0, anchor_y: int = 0):
         """
@@ -139,6 +143,7 @@ class Point(object):
 Point.ZERO = Point(0, 0)
 Point.INVALID = Point(-1, -1)
 
+
 class Rect(object):
     def __init__(self, x: Union[float, int], y: Union[float, int], width: Union[float, int], height: Union[float, int]):
         self.x = x
@@ -162,15 +167,15 @@ class Rect(object):
     @property
     def br(self):
         """返回当前Rect的右下角Point坐标"""
-        return Point(self.x+self.width, self.y+self.height)
+        return Point(self.x + self.width, self.y + self.height)
 
     @property
     def middle(self):
-        return Point(self.x+self.width/2, self.y+self.height/2)
+        return Point(self.x + self.width / 2, self.y + self.height / 2)
 
     @property
     def middle_int(self):
-        return Point(int(self.x + self.width/2), int(self.y + self.height/2))
+        return Point(int(self.x + self.width / 2), int(self.y + self.height / 2))
 
     def contains(self, v):
         """判断Point,或者Rect是否在当前Rect范围中"""
@@ -190,6 +195,7 @@ class Rect(object):
 
     @staticmethod
     def create_by_2_point(tl_point: Point, br_point: Point):
-        return Rect(tl_point.x, tl_point.y, br_point.x-tl_point.x, br_point.y-tl_point.y)
+        return Rect(tl_point.x, tl_point.y, br_point.x - tl_point.x, br_point.y - tl_point.y)
+
 
 Rect.ZERO = Rect(0, 0, 0, 0)

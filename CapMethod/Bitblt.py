@@ -2,10 +2,8 @@ import win32gui
 import win32api
 import win32con
 import win32ui
-
 import numpy as np
 import cv2
-
 from ImageBase.Size import Size
 
 
@@ -41,7 +39,7 @@ class BitBlt(object):
         compatibleDC.DeleteDC()
 
         img = cv2.cvtColor(img, cv2.COLOR_RGBA2RGB)  # 转换图片
-        # cv2.imshow("i'm crying", img)
+        # cv2.imshow("title", img)
         # cv2.waitKey(0)
 
         return img
@@ -49,6 +47,6 @@ class BitBlt(object):
 
 if __name__ == '__main__':
     test_size = Size(width=946, height=337)
-    test = BitBlt(hwnd=265924, border=[0,0], screenshot_size=test_size)
+    test = BitBlt(hwnd=265924, border=[0, 0], screenshot_size=test_size)
 
     test.screenshot()

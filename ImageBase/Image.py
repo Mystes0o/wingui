@@ -291,5 +291,6 @@ class Image(_image):
     def rgb_2_gray(self):
         return self.cvtColor(cv2.COLOR_BGR2GRAY)
 
+
 if __name__ == '__main__':
     test_image = Image()
