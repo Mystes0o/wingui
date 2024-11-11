@@ -1,7 +1,4 @@
 
-
-
-
 class BaseError(Exception):
     """ There was an exception that occurred while handling BaseImage"""
     def __init__(self, message="", *args, **kwargs):

@@ -1,4 +1,4 @@
-from winAuto.utils.d3dcapture import CaptureSession
+from utils.d3dcapture import CaptureSession
 
 
 class WindowGraphicsCapture(object):

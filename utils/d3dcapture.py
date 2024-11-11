@@ -1,22 +1,26 @@
+# -*- coding: utf-8 -*-
+# rotypes与d3d从https://github.com/dantmnf的库中截取而来
 import ctypes
-import rotypes.roapi
 import ctypes.wintypes
-from rotypes.Windows.Foundation import TypedEventHandler
-from rotypes.inspectable import IInspectable
-import rotypes.Windows.Graphics.Capture
-import rotypes.Windows.Graphics.DirectX
-from rotypes.Windows.Graphics.DirectX.Direct3D11 import IDirect3DDxgiInterfaceAccess, \
+from utils.rotypes.roapi import GetActivationFactory
+from utils.rotypes.Windows.Foundation import TypedEventHandler
+from utils.rotypes.inspectable import IInspectable
+
+from utils.rotypes.Windows.Graphics.Capture import Direct3D11CaptureFramePool, IGraphicsCaptureItemInterop, \
+    IGraphicsCaptureItem, GraphicsCaptureItem
+from utils.rotypes.Windows.Graphics.DirectX import DirectXPixelFormat
+from utils.rotypes.Windows.Graphics.DirectX.Direct3D11 import IDirect3DDxgiInterfaceAccess, \
     CreateDirect3D11DeviceFromDXGIDevice, IDirect3DDevice
 
 from . import d3d11
-from . import cvimage as Image
+
 
 import numpy as np
 
 PBYTE = ctypes.POINTER(ctypes.c_ubyte)
 
 
-class CaptureSession:
+class CaptureSession(object):
     def __init__(self):
         self._rtdevice = IDirect3DDevice()
         self._dxdevice = d3d11.ID3D11Device()
@@ -27,7 +31,6 @@ class CaptureSession:
         self._last_size = None
         self.frame_callback = None
         self.close_callback = None
-        self.cputex = None
 
     def _create_device(self):
         d3d11.D3D11CreateDevice(
@@ -48,22 +51,19 @@ class CaptureSession:
     def start(self, hwnd, capture_cursor=False):
         self.stop()
         self._create_device()
-        interop = rotypes.roapi.GetActivationFactory('Windows.Graphics.Capture.GraphicsCaptureItem').astype(
-            rotypes.Windows.Graphics.Capture.IGraphicsCaptureItemInterop)
-        item = interop.CreateForWindow(hwnd, rotypes.Windows.Graphics.Capture.IGraphicsCaptureItem.GUID)
+        interop = GetActivationFactory('Windows.Graphics.Capture.GraphicsCaptureItem').astype(IGraphicsCaptureItemInterop)
+        item = interop.CreateForWindow(hwnd, IGraphicsCaptureItem.GUID)
         self._item = item
         self._last_size = item.Size
-        self._reset_cputex(item.Size)
-        delegate = TypedEventHandler(rotypes.Windows.Graphics.Capture.GraphicsCaptureItem, IInspectable).delegate(
+        delegate = TypedEventHandler(GraphicsCaptureItem, IInspectable).delegate(
             self._closed_callback)
         self._evtoken = item.add_Closed(delegate)
-        self._framepool = rotypes.Windows.Graphics.Capture.Direct3D11CaptureFramePool.CreateFreeThreaded(self._rtdevice,
-                                                                                                         rotypes.Windows.Graphics.DirectX.DirectXPixelFormat.B8G8R8A8UIntNormalized,
+        self._framepool = Direct3D11CaptureFramePool.CreateFreeThreaded(self._rtdevice, DirectXPixelFormat.B8G8R8A8UIntNormalized,
                                                                                                          1, item.Size)
         self._session = self._framepool.CreateCaptureSession(item)
         pool = self._framepool
         pool.add_FrameArrived(
-            TypedEventHandler(rotypes.Windows.Graphics.Capture.Direct3D11CaptureFramePool, IInspectable).delegate(
+            TypedEventHandler(Direct3D11CaptureFramePool, IInspectable).delegate(
                 self._frame_arrived_callback))
         self._session.IsCursorCaptureEnabled = capture_cursor
         self._session.StartCapture()
@@ -73,9 +73,9 @@ class CaptureSession:
             self.frame_callback(self)
 
     def _closed_callback(self, x, y):
-        self.stop()
         if self.close_callback is not None:
             self.close_callback(self)
+        self.stop()
 
     def stop(self):
         if self._framepool is not None:
@@ -87,32 +87,12 @@ class CaptureSession:
         self._item = None
         self._rtdevice.Release()
         self._dxdevice.Release()
-        if self.cputex:
-            self.cputex.Release()
-
-    def _reset_cputex(self, size):
-        if self.cputex is not None:
-            self.cputex.Release()
-        desc2 = d3d11.D3D11_TEXTURE2D_DESC()
-        desc2.Width = size.Width
-        desc2.Height = size.Height
-        desc2.MipLevels = 1
-        desc2.ArraySize = 1
-        desc2.Format = d3d11.DXGI_FORMAT_B8G8R8A8_UNORM
-        desc2.SampleDesc = d3d11.DXGI_SAMPLE_DESC(Count=1, Quality=0)
-        desc2.Usage = d3d11.D3D11_USAGE_STAGING
-        desc2.CPUAccessFlags = d3d11.D3D11_CPU_ACCESS_READ
-        desc2.BindFlags = 0
-        desc2.MiscFlags = 0
-        self.cputex_desc = desc2
-        self.cputex = self._dxdevice.CreateTexture2D(ctypes.byref(desc2), None)
 
     def _reset_framepool(self, size, reset_device=False):
         if reset_device:
             self._create_device()
         self._framepool.Recreate(self._rtdevice,
-                                 rotypes.Windows.Graphics.DirectX.DirectXPixelFormat.B8G8R8A8UIntNormalized, 1, size)
-        self._reset_cputex(size)
+                                 DirectXPixelFormat.B8G8R8A8UIntNormalized, 1, size)
 
     def get_frame(self):
         frame = self._framepool.TryGetNextFrame()
@@ -131,17 +111,28 @@ class CaptureSession:
                 self._reset_framepool(frame.ContentSize)
                 return self.get_frame()
             tex = None
+            cputex = None
             try:
                 tex = frame.Surface.astype(IDirect3DDxgiInterfaceAccess).GetInterface(
                     d3d11.ID3D11Texture2D.GUID).astype(d3d11.ID3D11Texture2D)
-                # desc = tex.GetDesc()
-                desc = self.cputex_desc
-                self._immediatedc.CopyResource(self.cputex, tex)
-                mapinfo = self._immediatedc.Map(self.cputex, 0, d3d11.D3D11_MAP_READ, 0)
-                mat = np.ctypeslib.as_array(ctypes.cast(mapinfo.pData, PBYTE), (desc.Height, mapinfo.RowPitch // 4, 4))[
+                desc = tex.GetDesc()
+                desc2 = d3d11.D3D11_TEXTURE2D_DESC()
+                desc2.Width = desc.Width
+                desc2.Height = desc.Height
+                desc2.MipLevels = desc.MipLevels
+                desc2.ArraySize = desc.ArraySize
+                desc2.Format = desc.Format
+                desc2.SampleDesc = desc.SampleDesc
+                desc2.Usage = d3d11.D3D11_USAGE_STAGING
+                desc2.CPUAccessFlags = d3d11.D3D11_CPU_ACCESS_READ
+                desc2.BindFlags = 0
+                desc2.MiscFlags = 0
+                cputex = self._dxdevice.CreateTexture2D(ctypes.byref(desc2), None)
+                self._immediatedc.CopyResource(cputex, tex)
+                mapinfo = self._immediatedc.Map(cputex, 0, d3d11.D3D11_MAP_READ, 0)
+                img = np.ctypeslib.as_array(ctypes.cast(mapinfo.pData, PBYTE), (desc.Height, mapinfo.RowPitch // 4, 4))[
                       :, :desc.Width].copy()
-                img = Image.fromarray(mat, 'BGRA')
-                self._immediatedc.Unmap(self.cputex, 0)
+                self._immediatedc.Unmap(cputex, 0)
             except OSError as e:
                 if e.winerror == d3d11.DXGI_ERROR_DEVICE_REMOVED or e.winerror == d3d11.DXGI_ERROR_DEVICE_RESET:
                     need_reset_framepool = True
@@ -151,6 +142,8 @@ class CaptureSession:
             finally:
                 if tex is not None:
                     tex.Release()
+                if cputex is not None:
+                    cputex.Release()
             if need_reset_framepool:
                 self._reset_framepool(frame.ContentSize, need_reset_device)
                 return self.get_frame()
