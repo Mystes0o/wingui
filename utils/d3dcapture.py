@@ -12,8 +12,7 @@ from utils.rotypes.Windows.Graphics.DirectX import DirectXPixelFormat
 from utils.rotypes.Windows.Graphics.DirectX.Direct3D11 import IDirect3DDxgiInterfaceAccess, \
     CreateDirect3D11DeviceFromDXGIDevice, IDirect3DDevice
 
-from . import d3d11
-
+from utils import d3d11
 
 import numpy as np
 
@@ -51,15 +50,17 @@ class CaptureSession(object):
     def start(self, hwnd, capture_cursor=False):
         self.stop()
         self._create_device()
-        interop = GetActivationFactory('Windows.Graphics.Capture.GraphicsCaptureItem').astype(IGraphicsCaptureItemInterop)
+        interop = GetActivationFactory('Windows.Graphics.Capture.GraphicsCaptureItem').astype(
+            IGraphicsCaptureItemInterop)
         item = interop.CreateForWindow(hwnd, IGraphicsCaptureItem.GUID)
         self._item = item
         self._last_size = item.Size
         delegate = TypedEventHandler(GraphicsCaptureItem, IInspectable).delegate(
             self._closed_callback)
         self._evtoken = item.add_Closed(delegate)
-        self._framepool = Direct3D11CaptureFramePool.CreateFreeThreaded(self._rtdevice, DirectXPixelFormat.B8G8R8A8UIntNormalized,
-                                                                                                         1, item.Size)
+        self._framepool = Direct3D11CaptureFramePool.CreateFreeThreaded(self._rtdevice,
+                                                                        DirectXPixelFormat.B8G8R8A8UIntNormalized,
+                                                                        1, item.Size)
         self._session = self._framepool.CreateCaptureSession(item)
         pool = self._framepool
         pool.add_FrameArrived(
@@ -148,3 +149,8 @@ class CaptureSession(object):
                 self._reset_framepool(frame.ContentSize, need_reset_device)
                 return self.get_frame()
         return img
+
+
+if __name__ == '__main__':
+    test = CaptureSession()
+    test.start(14549338)

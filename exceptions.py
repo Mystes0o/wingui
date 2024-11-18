@@ -1,6 +1,6 @@
-
 class BaseError(Exception):
     """ There was an exception that occurred while handling BaseImage"""
+
     def __init__(self, message="", *args, **kwargs):
         self.message = message
 
@@ -23,11 +23,14 @@ class TransformError(BaseError):
 class ReadImageError(BaseError):
     """ An error occurred while Read Image """
 
+
 class InputImageError(BaseError):
     """ An error occurred while input image place/dtype/channels error"""
 
+
 class PerspectiveTransformError(BaseError):
     """ An error occurred while perspectiveTransform """
+
 
 class NoEnoughPointsError(BaseError):
     """ detect not enough feature points in input images"""

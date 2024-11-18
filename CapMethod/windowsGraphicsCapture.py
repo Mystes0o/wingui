@@ -33,3 +33,11 @@ class WindowGraphicsCapture(object):
             if self.state_box[1]:
                 self.state_box[1] = False
                 return self.state_box[0]
+
+
+if __name__ == '__main__':
+    test = WindowGraphicsCapture(14549338)
+    test.start()
+    test.screenshot()
+    # print(a)
+

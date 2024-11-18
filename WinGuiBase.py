@@ -1,11 +1,13 @@
 import cv2
 import win32api
+import win32con
 import win32gui
 import time
 from ImageBase import utils
 from ImageBase.Size import Size, Point, Rect
 from constanct import SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN
 from CapMethod.Bitblt import BitBlt
+from CapMethod.windowsGraphicsCapture import WindowGraphicsCapture
 from typing import Dict, Union, Tuple, List
 from pywinauto import mouse, keyboard
 from match import sift
@@ -51,8 +53,27 @@ class Win(object):
 
     def screenshot(self):
         screenshot_size = Size(self.rect.width, self.rect.height)
-        img = BitBlt(hwnd=self._hwnd, border=[0, 0], screenshot_size=screenshot_size).screenshot()
+        try:
+            img = WindowGraphicsCapture(hwnd=self._hwnd).screenshot()
+        except WindowsError:
+            print('WindowGraphicsCapture 截图失败，尝试使用 Bitblt 截图')
+        else:
+            img = BitBlt(hwnd=self._hwnd, border=[0, 0], screenshot_size=screenshot_size).screenshot()
         return img
+
+    def draw_highlight(self, color=win32api.RGB(255, 255, 255), thickness=5):
+        hdc = win32gui.GetWindowDC(self._hwnd)
+        left, top, right, bottom = 100, 100, 200, 200
+        brush = win32gui.CreateSolidBrush(color)
+        pen = win32gui.CreatePen(win32con.PS_SOLID, thickness, color)
+        win32gui.SelectObject(hdc, brush)
+        win32gui.SelectObject(hdc, pen)
+
+        # 绘制边框
+        win32gui.Rectangle(hdc, left, top, right, bottom)
+        win32gui.DeleteObject(brush)
+        win32gui.DeleteObject(pen)
+        win32gui.ReleaseDC(self._hwnd, hdc)
 
     def _window_pos2screen_pos(self, pos: Point):
         """
@@ -94,13 +115,19 @@ class Win(object):
 
 
 if __name__ == '__main__':
-    ere = Win(handle_title='EaseUsMainWindow')
-    print(ere.rect)
-    a = ere.screenshot()
-    b = utils.read_images(r'E:\python\wingui\test\screen.png')
-    point, matches = sift.sift_feature_matching_with_box(a, b)
-    # cv2.imshow('Matched and Boxed Result', result)
+    # ereMain = Win(handle_title='EaseUs RecExperts')
+    ereWindowBar = Win(handle_title="EreWindowBar")
+
+    # print(ereMain.rect)
+    # a = ereMain.screenshot()
+
+    print(ereWindowBar.rect)
+    # b = ereWindowBar.screenshot()
+    # b = utils.read_images(r'E:\python\wingui\test\screen.png')
+    # point, matches = sift.sift_feature_matching_with_box(a, b)
+    # cv2.imshow('Matched and Boxed Result', b)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
     # print(c)
-    ere.click(point)
+    # ere.click(point)
+    ereWindowBar.draw_highlight()

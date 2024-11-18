@@ -1,7 +1,7 @@
 import cv2
 from loguru import logger
 import numpy as np
-from ImageBase.Size import Point
+from ImageBase.Size import Point, Rect
 
 
 def sift_feature_matching_with_box(template_image, target_image):
@@ -59,6 +59,6 @@ def sift_feature_matching_with_box(template_image, target_image):
         # matches_img = cv2.drawMatches(target_image, keypoints_target, result_image, keypoints_template, good_matches,
         #                               None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
 
-        return point, good_matches
+        return rect, point, good_matches
     else:
         return None, None
