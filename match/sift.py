@@ -44,21 +44,31 @@ def sift_feature_matching_with_box(template_image, target_image):
         corners = np.float32([[0, 0], [0, h], [w, h], [w, 0]]).reshape(-1, 1, 2)
         # print(corners)
         transformed_corners = cv2.perspectiveTransform(corners, H)
+        # print(transformed_corners)
         a = transformed_corners.tolist()
         x = a[0][0][0] + (a[2][0][0] - a[0][0][0]) / 2
+        x = (abs(a[0][0][0]) + abs(a[1][0][0]) + abs(a[2][0][0]) + abs(a[3][0][0]))/4
         y = a[0][0][1] + (a[2][0][1] - a[0][0][1]) / 2
+        y = (abs(a[0][0][1]) + abs(a[1][0][1]) + abs(a[2][0][1]) + abs(a[3][0][1]))/4
         point = Point(x.__int__(), y.__int__())
-        # print(x, y)
-        # print(a)
+        rect = Rect(x, y, w, h)
+        print(point)
+        print(a)
 
         # 绘制目标位置框
-        # result_image = template_image.copy()
-        # result_image = cv2.polylines(result_image, [np.int32(transformed_corners)], True, (0, 255, 0), 3, cv2.LINE_AA)
+        result_image = template_image.copy()
+        result_image = cv2.polylines(result_image, [np.int32(transformed_corners)], True, (0, 255, 0), 3, cv2.LINE_AA)
 
         # 绘制所有匹配结果
-        # matches_img = cv2.drawMatches(target_image, keypoints_target, result_image, keypoints_template, good_matches,
-        #                               None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+        matches_img = cv2.drawMatches(target_image, keypoints_target, result_image, keypoints_template, good_matches,
+                                      None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+        cv2.imshow("Matches", matches_img)
+        cv2.waitKey(0)
 
         return rect, point, good_matches
     else:
         return None, None
+
+
+if __name__ == '__main__':
+    sift_feature_matching_with_box()

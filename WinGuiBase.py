@@ -10,7 +10,7 @@ from CapMethod.Bitblt import BitBlt
 from CapMethod.windowsGraphicsCapture import WindowGraphicsCapture
 from typing import Dict, Union, Tuple, List
 from pywinauto import mouse, keyboard
-from match import sift
+from match import sift, orb
 
 
 class Win(object):
@@ -114,14 +114,32 @@ class Win(object):
         self.mouse.release(coords=(point.x, point.y), button=button)
 
 
+
 if __name__ == '__main__':
-    # ereMain = Win(handle_title='EaseUs RecExperts')
+    ereMain = Win(handle_title='EaseUs RecExperts')
+    screenMod = utils.read_images(r'test/screen.png')
+    h, w, c = screenMod.shape
+    recordButton = utils.read_images(r'test/recordButton.png')
+    # rect, point, matches = sift.sift_feature_matching_with_box(screenMod, ereMain.screenshot())
+    # ereMain.click(point)
+    # time.sleep(2)
+    # ereScreen = Win(handle_title="EreWindowBar")
+    # rect, point, matches = sift.sift_feature_matching_with_box(recordButton, ereScreen.screenshot())
+    # ereScreen.click(point)
+
+    c = orb.match_descriptor(screenMod, ereMain.screenshot())
+    print(c)
+    ereMain.click(c)
+
     ereWindowBar = Win(handle_title="EreWindowBar")
+
+    d = orb.match_descriptor(recordButton, ereWindowBar.screenshot())
+    ereWindowBar.click(d)
 
     # print(ereMain.rect)
     # a = ereMain.screenshot()
 
-    print(ereWindowBar.rect)
+    # print(ereWindowBar.rect)
     # b = ereWindowBar.screenshot()
     # b = utils.read_images(r'E:\python\wingui\test\screen.png')
     # point, matches = sift.sift_feature_matching_with_box(a, b)
@@ -130,4 +148,4 @@ if __name__ == '__main__':
     # cv2.destroyAllWindows()
     # print(c)
     # ere.click(point)
-    ereWindowBar.draw_highlight()
+    # ereWindowBar.draw_highlight()
