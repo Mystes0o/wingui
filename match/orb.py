@@ -4,14 +4,14 @@
 """
 # File       : orb.py
 # Time       ：2024/11/21 14:04
-# Author     ：author name
-# version    ：python 3.8
+# Author     ：shu
+# version    ：python 3.11
 # Description：
 """
 import cv2
 import numpy as np
 from ImageBase.Size import Point, Rect
-
+from loguru import logger
 from ImageBase import utils
 
 
@@ -72,7 +72,7 @@ def match_descriptor(image_template, image2):
         H, mask = cv2.findHomography(template_pts, target_pts, cv2.RANSAC, 5.0)
 
         # 使用单应性矩阵计算模板图像在目标图像中的位置
-        print(image_template.size)
+        logger.info(f'{image_template.size}')
         h, w = image_template.shape[:2]  # 模板图片尺寸
         corners = np.float32([[0, 0], [w, 0], [w, h], [0, h]]).reshape(-1, 1, 2)  # 模板的四个角点
         transformed_corners = cv2.perspectiveTransform(corners, H)  # 映射到目标图像的位置
@@ -81,15 +81,18 @@ def match_descriptor(image_template, image2):
         center_x = int(np.mean(transformed_corners[:, 0, 0]))
         center_y = int(np.mean(transformed_corners[:, 0, 1]))
         point = Point(center_x, center_y)
+    else:
+        logger.error("特征点过少匹配失败，检查模板图像尺寸")
+        point = Point(0, 0)
 
     # 绘制匹配结果
-    result = cv2.drawMatches(image_template, kp_src, image2, kp_dst, good_matches, None,
-                             flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+    # result = cv2.drawMatches(image_template, kp_src, image2, kp_dst, good_matches, None,
+    #                          flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
 
     # 显示结果
-    cv2.imshow('Matches', result)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # cv2.imshow('Matches', result)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
     return point
 
 

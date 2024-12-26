@@ -40,6 +40,9 @@ def bytes_2_img(byte) -> np.ndarray:
 
     return img
 
+# def get_image_dict(path):
+
+
 
 class AutoIncrement(object):
     def __init__(self):

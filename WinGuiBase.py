@@ -8,9 +8,10 @@ from ImageBase.Size import Size, Point, Rect
 from constanct import SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN
 from CapMethod.Bitblt import BitBlt
 from CapMethod.windowsGraphicsCapture import WindowGraphicsCapture
-from typing import Dict, Union, Tuple, List
+from typing import Union, Tuple, List
 from pywinauto import mouse, keyboard
-from match import sift, orb
+from match import orb
+from loguru import logger
 
 
 class Win(object):
@@ -19,7 +20,7 @@ class Win(object):
             self._hwnd = self.find_window(hwnd_title=handle_title)
             self._window_size = Size(win32api.GetSystemMetrics(SM_CXVIRTUALSCREEN),  # 全屏幕尺寸大小
                                      win32api.GetSystemMetrics(SM_CYVIRTUALSCREEN))
-            print(f'设备分辨率:{self._window_size}, 窗口所用句柄: {self._hwnd}')
+            logger.info(f'设备分辨率:{self._window_size}, 窗口所用句柄: {self._hwnd}')
 
         self.mouse = mouse
         self.keyboard = keyboard
@@ -57,23 +58,22 @@ class Win(object):
             img = WindowGraphicsCapture(hwnd=self._hwnd).screenshot()
         except WindowsError:
             print('WindowGraphicsCapture 截图失败，尝试使用 Bitblt 截图')
-        else:
             img = BitBlt(hwnd=self._hwnd, border=[0, 0], screenshot_size=screenshot_size).screenshot()
         return img
 
-    def draw_highlight(self, color=win32api.RGB(255, 255, 255), thickness=5):
-        hdc = win32gui.GetWindowDC(self._hwnd)
-        left, top, right, bottom = 100, 100, 200, 200
-        brush = win32gui.CreateSolidBrush(color)
-        pen = win32gui.CreatePen(win32con.PS_SOLID, thickness, color)
-        win32gui.SelectObject(hdc, brush)
-        win32gui.SelectObject(hdc, pen)
-
-        # 绘制边框
-        win32gui.Rectangle(hdc, left, top, right, bottom)
-        win32gui.DeleteObject(brush)
-        win32gui.DeleteObject(pen)
-        win32gui.ReleaseDC(self._hwnd, hdc)
+    # def draw_highlight(self, color=win32api.RGB(255, 255, 255), thickness=5):
+    #     hdc = win32gui.GetWindowDC(self._hwnd)
+    #     left, top, right, bottom = 100, 100, 200, 200
+    #     brush = win32gui.CreateSolidBrush(color)
+    #     pen = win32gui.CreatePen(win32con.PS_SOLID, thickness, color)
+    #     win32gui.SelectObject(hdc, brush)
+    #     win32gui.SelectObject(hdc, pen)
+    #
+    #     # 绘制边框
+    #     win32gui.Rectangle(hdc, left, top, right, bottom)
+    #     win32gui.DeleteObject(brush)
+    #     win32gui.DeleteObject(pen)
+    #     win32gui.ReleaseDC(self._hwnd, hdc)
 
     def _window_pos2screen_pos(self, pos: Point):
         """
@@ -89,29 +89,34 @@ class Win(object):
         pos = pos + windowpos
         return pos
 
-    def click(self, point: Union[Tuple[int, int], List, Point], duration: Union[float, int, None] = 0.03,
+    def click(self, template, duration: Union[float, int, None] = 0.03,
               button: str = 'left'):
         """
         点击连接窗口的指定位置 ps:相对坐标,以连接的句柄窗口左上角为原点
 
         Args:
-            point: 需要点击的坐标
+            template: 需要点击的图片
             duration: 延迟
             button: 左右键 left/right
 
         Returns:
             None
         """
+        try:
+            point = orb.match_descriptor(template, self.screenshot())
+        except WindowsError:
+            point = Point(0, 0)
 
         if isinstance(point, (tuple, list)):
             point = Point(x=point[0], y=point[1])
 
         point = self._window_pos2screen_pos(point)
-        print('change', point)
+        logger.info(f'点击位置:{point}')
 
         self.mouse.press(coords=(point.x, point.y), button=button)
         time.sleep(duration)
         self.mouse.release(coords=(point.x, point.y), button=button)
+
 
 
 
