@@ -6,7 +6,7 @@ class EreScreen(Win):
     def __init__(self):
         super().__init__(handle_title="EreWindowBar")
 
-webcam = utils.read_images(r'../test/webcam.png')
+recordButton = utils.read_images(r'../test/recordButton.png')
 if __name__ == '__main__':
     ereScreen = EreScreen()
-    ereScreen.screenshot()
+    ereScreen.click(recordButton)

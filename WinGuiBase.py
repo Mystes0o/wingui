@@ -1,4 +1,3 @@
-import cv2
 import win32api
 import win32con
 import win32gui
@@ -10,7 +9,7 @@ from CapMethod.Bitblt import BitBlt
 from CapMethod.windowsGraphicsCapture import WindowGraphicsCapture
 from typing import Union, Tuple, List
 from pywinauto import mouse, keyboard
-from match import orb
+from match import orb, ocr
 from loguru import logger
 
 
@@ -57,23 +56,23 @@ class Win(object):
         try:
             img = WindowGraphicsCapture(hwnd=self._hwnd).screenshot()
         except WindowsError:
-            print('WindowGraphicsCapture 截图失败，尝试使用 Bitblt 截图')
+            logger.error('WindowGraphicsCapture 截图失败，尝试使用 Bitblt 截图')
             img = BitBlt(hwnd=self._hwnd, border=[0, 0], screenshot_size=screenshot_size).screenshot()
         return img
 
-    # def draw_highlight(self, color=win32api.RGB(255, 255, 255), thickness=5):
-    #     hdc = win32gui.GetWindowDC(self._hwnd)
-    #     left, top, right, bottom = 100, 100, 200, 200
-    #     brush = win32gui.CreateSolidBrush(color)
-    #     pen = win32gui.CreatePen(win32con.PS_SOLID, thickness, color)
-    #     win32gui.SelectObject(hdc, brush)
-    #     win32gui.SelectObject(hdc, pen)
-    #
-    #     # 绘制边框
-    #     win32gui.Rectangle(hdc, left, top, right, bottom)
-    #     win32gui.DeleteObject(brush)
-    #     win32gui.DeleteObject(pen)
-    #     win32gui.ReleaseDC(self._hwnd, hdc)
+    def draw_highlight(self, color=win32api.RGB(255, 255, 255), thickness=5):
+        hdc = win32gui.GetWindowDC(self._hwnd)
+        left, top, right, bottom = 100, 100, 200, 200
+        brush = win32gui.CreateSolidBrush(color)
+        pen = win32gui.CreatePen(win32con.PS_SOLID, thickness, color)
+        win32gui.SelectObject(hdc, brush)
+        win32gui.SelectObject(hdc, pen)
+
+        # 绘制边框
+        win32gui.Rectangle(hdc, left, top, right, bottom)
+        win32gui.DeleteObject(brush)
+        win32gui.DeleteObject(pen)
+        win32gui.ReleaseDC(self._hwnd, hdc)
 
     def _window_pos2screen_pos(self, pos: Point):
         """
@@ -89,7 +88,7 @@ class Win(object):
         pos = pos + windowpos
         return pos
 
-    def click(self, template, duration: Union[float, int, None] = 0.03,
+    def click_pic(self, template, duration: Union[float, int, None] = 0.03,
               button: str = 'left'):
         """
         点击连接窗口的指定位置 ps:相对坐标,以连接的句柄窗口左上角为原点
@@ -117,40 +116,20 @@ class Win(object):
         time.sleep(duration)
         self.mouse.release(coords=(point.x, point.y), button=button)
 
+    def click_text(self, text: str, duration: Union[float, int, None] = 0.03,button: str = 'left'):
+        point = ocr.ocr_match(self.screenshot(), text)[0]
+        point = self._window_pos2screen_pos(point)
+        logger.info(f'点击位置:{point}')
+        self.mouse.press(coords=(point.x, point.y), button=button)
+        time.sleep(duration)
+        self.mouse.release(coords=(point.x, point.y), button=button)
+
+
+
 
 
 
 if __name__ == '__main__':
     ereMain = Win(handle_title='EaseUs RecExperts')
-    screenMod = utils.read_images(r'test/screen.png')
-    h, w, c = screenMod.shape
-    recordButton = utils.read_images(r'test/recordButton.png')
-    # rect, point, matches = sift.sift_feature_matching_with_box(screenMod, ereMain.screenshot())
-    # ereMain.click(point)
-    # time.sleep(2)
-    # ereScreen = Win(handle_title="EreWindowBar")
-    # rect, point, matches = sift.sift_feature_matching_with_box(recordButton, ereScreen.screenshot())
-    # ereScreen.click(point)
-
-    c = orb.match_descriptor(screenMod, ereMain.screenshot())
-    print(c)
-    ereMain.click(c)
-
-    ereWindowBar = Win(handle_title="EreWindowBar")
-
-    d = orb.match_descriptor(recordButton, ereWindowBar.screenshot())
-    ereWindowBar.click(d)
-
-    # print(ereMain.rect)
-    # a = ereMain.screenshot()
-
-    # print(ereWindowBar.rect)
-    # b = ereWindowBar.screenshot()
-    # b = utils.read_images(r'E:\python\wingui\test\screen.png')
-    # point, matches = sift.sift_feature_matching_with_box(a, b)
-    # cv2.imshow('Matched and Boxed Result', b)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-    # print(c)
-    # ere.click(point)
-    # ereWindowBar.draw_highlight()
+    ereMain.click_text('REC')
+    # time.sleep(300)

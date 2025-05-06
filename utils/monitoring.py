@@ -5,20 +5,22 @@
 # File       : monitoring.py
 # Time       ：2024/8/29 15:27
 # Author     ：shu
-# version    ：python 3.9
+# version    ：python 3.11
 # Description：收集性能占用信息
 """
-import logging
+import os
+from loguru import logger
 import time
 import psutil
-from gpustat.core import GPUStatCollection
+import gpustat
 import threading
 
 
 class Monitoring:
     def __init__(self):
-        self.process_name = "VideoEditorQt.exe"
-        self.interval = 5
+        self.cpu_count = psutil.cpu_count()
+        self.process_name = "RecordExecutor.exe"
+        self.interval = 1
         self.event = threading.Event()
 
     def get_pids_by_process_name(self, process_name=None):
@@ -34,12 +36,11 @@ class Monitoring:
                     pids.append(proc.info['pid'])
             return pids
 
-    def get_resource_usage(self, total_time=None, process_name=None):
+    def get_resource_usage(self, total_time=None):
         """
         设置监控时间间隔（秒）和总时间（分钟）
         Args:
             total_time:
-            process_name:
         Returns:
         """
 
@@ -68,7 +69,11 @@ class Monitoring:
                 break
 
             # CPU 使用率
+            cpu_count = os.cpu_count()
             cpu_usage = process.cpu_percent(interval=self.interval)
+            cpu_usage = round(cpu_usage / cpu_count, 2)
+            # print(self.cpu_count)
+            # print(cpu_usage)
             cpu_usage_list.append(cpu_usage)
 
             # 获取内存使用情况
@@ -77,21 +82,20 @@ class Monitoring:
             mem_usage_list.append(mem_usage)
 
             # 获取GPU使用情况
-            gpus = GPUStatCollection.new_query()
-            for gpu in gpus:
+            stats = gpustat.GPUStatCollection.new_query()
+            for gpu in stats:
                 gpu_usage = gpu.utilization
                 gpu_usage_list.append(gpu_usage)
+                logger.info(f"CPU使用率:{cpu_usage}%, 内存使用率:{mem_usage}M, GPU使用率:{gpu_usage}%")
 
             # 等待周期
-            logging.info("CPU使用率:", cpu_usage, "%", "内存使用率:", mem_usage, "M", "GPU使用率:", gpu_usage, "%")
             time.sleep(self.interval)
 
         # 计算平均值
         avg_cpu_usage = round((sum(cpu_usage_list) / len(cpu_usage_list)), 2)
         avg_mem_usage = round((sum(mem_usage_list) / len(mem_usage_list)), 2)
         avg_gpu_usage = round((sum(gpu_usage_list) / len(gpu_usage_list)), 2)
-        print("平均CPU使用率:", avg_cpu_usage, "%", "平均内存使用率:", avg_mem_usage, "M", "平均GPU使用率:",
-              avg_gpu_usage, "%")
+        logger.info(f"平均CPU使用率:{avg_cpu_usage}%, 平均内存使用率:{avg_mem_usage}M, 平均GPU使用率:{avg_gpu_usage}%")
 
         return avg_cpu_usage, avg_mem_usage, avg_gpu_usage
 
@@ -103,8 +107,10 @@ class Monitoring:
     def monitoring_stop(self, monitoring_thread):
         self.event.set()
         monitoring_thread.join()
-        print(1)
 
 
 if __name__ == '__main__':
     monitoring = Monitoring()
+    a = monitoring.monitoring_start()
+    time.sleep(20)
+    monitoring.monitoring_stop(a)
