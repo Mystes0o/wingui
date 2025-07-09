@@ -9,11 +9,14 @@
 # Description：收集性能占用信息
 """
 import os
+import re
+from gpustat import GPUStatCollection
 from loguru import logger
 import time
 import psutil
 import gpustat
 import threading
+import uiautomation as auto
 
 
 class Monitoring:
@@ -109,8 +112,93 @@ class Monitoring:
         monitoring_thread.join()
 
 
+class WindowsManagerMonitoring:
+    def __init__(self):
+        self.process_name = "RecordExecutor"
+        self.interval = 1
+        self.event = threading.Event()
+        self.taskmgr = auto.WindowControl(Name="任务管理器")
+
+    def get_tree_by_process_name(self, process_name=None):
+        """
+        根据进程名称获取所有匹配的进程ID列表
+        :param process_name: 进程名称
+        :return: 包含所有匹配进程ID的列表
+        """
+        data = self.taskmgr.DataGridControl(Name='进程').GetChildren()
+        for i in data:
+            # print(i.Name)
+            if self.process_name in i.Name:
+                ere_data = i
+                logger.info(ere_data.Name)
+                return ere_data
+
+        logger.error("未找到进程")
+        return None
+
+    def  get_resource_usage(self, total_time=None):
+        ere_data = self.get_tree_by_process_name()
+        more_information = ere_data.PaneControl(Name="行详细信息")
+        resource_usage = more_information.GetChildren()
+
+        # 初始化统计数据
+        cpu_usage_list = []
+        mem_usage_list = []
+        gpu_usage_list = []
+
+        start_time = time.time()
+        while True:
+            if total_time is None:
+                pass
+            else:
+                # 计算已经过去的时间
+                elapsed_time = time.time() - start_time
+                if elapsed_time >= total_time:
+                    break  # 如果超过了设定的时间则退出循环
+            if self.event.is_set():
+                break  # 线程结束
+
+            # CPU 使用率
+            cpu_usage = resource_usage[3].Name
+            cpu_usage_mun = float(cpu_usage.split("%")[0])
+            cpu_usage_list.append(cpu_usage_mun)
+
+            # 获取内存使用情况
+            memory_usage = resource_usage[5].Name
+            memory_usage_mun = float(memory_usage.split(" M")[0])
+            mem_usage_list.append(memory_usage_mun)
+
+            # 获取GPU使用情况
+            gpu_usage = resource_usage[4].Name
+            gpu_usage_mun = float(gpu_usage.split("%")[0])
+            gpu_usage_list.append(gpu_usage_mun)
+            logger.info(f"CPU使用率:{cpu_usage}, 内存使用率:{memory_usage}, GPU使用率:{gpu_usage}")
+
+            # 等待周期
+            time.sleep(self.interval)
+
+        # 计算平均值
+        avg_cpu_usage = round((sum(cpu_usage_list) / len(cpu_usage_list)), 2)
+        avg_gpu_usage = round((sum(gpu_usage_list) / len(gpu_usage_list)), 2)
+        avg_mem_usage = round((sum(mem_usage_list) / len(mem_usage_list)), 2)
+        logger.info(f"平均CPU使用率:{avg_cpu_usage}%, 平均内存使用率:{avg_mem_usage}M, 平均GPU使用率:{avg_gpu_usage}%")
+
+        return avg_cpu_usage, avg_mem_usage, avg_gpu_usage
+
+    def monitoring_start(self):
+        monitoring_thread = threading.Thread(target=self.get_resource_usage)
+        monitoring_thread.start()
+        return monitoring_thread
+
+    def monitoring_stop(self, monitoring_thread):
+        self.event.set()
+        monitoring_thread.join()
+
+
+
+
 if __name__ == '__main__':
-    monitoring = Monitoring()
-    a = monitoring.monitoring_start()
-    time.sleep(20)
-    monitoring.monitoring_stop(a)
+    monitoring = WindowsManagerMonitoring()
+    # monitoring.get_tree_by_process_name()
+    monitoring.get_resource_usage(10)
+
