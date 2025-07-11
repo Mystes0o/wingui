@@ -17,7 +17,7 @@ import psutil
 import gpustat
 import threading
 import uiautomation as auto
-
+import queue
 
 class Monitoring:
     def __init__(self):
@@ -114,7 +114,9 @@ class Monitoring:
 
 class WindowsManagerMonitoring:
     def __init__(self):
-        self.process_name = "RecordExecutor"
+        self.result_queue = None
+        self.ere_process_name = "RecordExecutor"
+        self.process_name = "python"
         self.interval = 1
         self.event = threading.Event()
         self.taskmgr = auto.WindowControl(Name="任务管理器")
@@ -126,12 +128,25 @@ class WindowsManagerMonitoring:
         :return: 包含所有匹配进程ID的列表
         """
         data = self.taskmgr.DataGridControl(Name='进程').GetChildren()
-        for i in data:
-            # print(i.Name)
-            if self.process_name in i.Name:
-                ere_data = i
-                logger.info(ere_data.Name)
-                return ere_data
+
+        if process_name is None:
+            for i in data:
+                # print(i.Name)
+                if self.process_name in i.Name:
+                    ere_data = i
+                    logger.info(ere_data.Name)
+                    return ere_data
+                elif self.ere_process_name in i.Name:
+                    ere_data = i
+                    logger.info(ere_data.Name)
+                    return ere_data
+        else:
+            for i in data:
+                # print(i.Name)
+                if process_name in i.Name:
+                    ere_data = i
+                    logger.info(ere_data.Name)
+                    return ere_data
 
         logger.error("未找到进程")
         return None
@@ -182,17 +197,25 @@ class WindowsManagerMonitoring:
         avg_gpu_usage = round((sum(gpu_usage_list) / len(gpu_usage_list)), 2)
         avg_mem_usage = round((sum(mem_usage_list) / len(mem_usage_list)), 2)
         logger.info(f"平均CPU使用率:{avg_cpu_usage}%, 平均内存使用率:{avg_mem_usage}M, 平均GPU使用率:{avg_gpu_usage}%")
+        result = ("平均CPU使用率"+str(avg_cpu_usage)+"%\n平均内存使用率"+str(avg_mem_usage)+"M\n平均GPU使用率"+str(avg_gpu_usage)+"%")
 
-        return avg_cpu_usage, avg_mem_usage, avg_gpu_usage
+        return result
 
     def monitoring_start(self):
-        monitoring_thread = threading.Thread(target=self.get_resource_usage)
+        self.result_queue = queue.Queue()
+        monitoring_thread = threading.Thread(target=self._wrap_get_resource_usage)
         monitoring_thread.start()
         return monitoring_thread
+
+    def _wrap_get_resource_usage(self):
+        """包装函数，将结果放入队列"""
+        result = self.get_resource_usage()
+        self.result_queue.put(result)
 
     def monitoring_stop(self, monitoring_thread):
         self.event.set()
         monitoring_thread.join()
+        return self.result_queue.get()
 
 
 
@@ -200,5 +223,6 @@ class WindowsManagerMonitoring:
 if __name__ == '__main__':
     monitoring = WindowsManagerMonitoring()
     # monitoring.get_tree_by_process_name()
-    monitoring.get_resource_usage(10)
+    monitoring.monitoring_start()
+    monitoring.monitoring_stop(monitoring.monitoring_start())
 

@@ -1,6 +1,8 @@
-import uiautomation as auto
+import os
 import subprocess
+import uiautomation as auto
 import pyautogui
+import time
 
 def send_key(key):
     auto.SendKeys(key)
@@ -19,12 +21,10 @@ class EreMainWindow:
 
     # 初始化主界面的按钮元素 Start Recording
     # 启动ere
+    # os.startfile(r"C:\Program Files (x86)\EaseUS\RecExperts\bin\RecExperts.exe")
     subprocess.Popen([r"C:\Program Files (x86)\EaseUS\RecExperts\bin\RecExperts.exe"])
     ereMainWindow = auto.WindowControl(Name="EaseUS RecExperts")
-
     MyLibrary = ereMainWindow.CheckBoxControl(Name="My Library")
-    MyLibraryRect = MyLibrary.BoundingRectangle
-
     StartRecording = ereMainWindow.CheckBoxControl(Name="Start Recording")
     EnterLicense = ereMainWindow.ButtonControl(Name="Enter License")
     Upgrade = ereMainWindow.ButtonControl(Name="Upgrade")
@@ -65,41 +65,8 @@ class AudioRecordWindow:
 
 
 
-
-    # def high_light(self, rectangle):
-    #     # 初始化 Windows API
-    #     user32 = ctypes.windll.user32
-    #     gdi32 = ctypes.windll.gdi32
-    #
-    #     # 创建画笔
-    #     pen = gdi32.CreatePen(0, 2, 0x66ccff)  # 样式, 宽度, 颜色（BGR格式）
-    #
-    #     try:
-    #         while True:
-    #             # 获取控件位置
-    #             rect = rectangle
-    #             hdc = user32.GetDC(0)  # 获取屏幕设备上下文
-    #
-    #             # 绘制矩形
-    #             gdi32.SelectObject(hdc, pen)
-    #             gdi32.Rectangle(hdc, rect.left, rect.top, rect.right, rect.bottom)
-    #
-    #             # 释放资源
-    #             user32.ReleaseDC(0, hdc)
-    #             time.sleep(0.1)  # 控制刷新频率
-    #
-    #             # 清空绘制（通过覆盖白色矩形）
-    #             hdc = user32.GetDC(0)
-    #             gdi32.SelectObject(hdc, gdi32.GetStockObject(0))  # 白色画笔
-    #             gdi32.Rectangle(hdc, rect.left, rect.top, rect.right, rect.bottom)
-    #             user32.ReleaseDC(0, hdc)
-    #
-    #     except KeyboardInterrupt:
-    #         gdi32.DeleteObject(pen)  # 清理画笔
-
-
 if __name__ == '__main__':
-    drag(0, 0, 1920, 1080)
+    ere = EreMainWindow()
 
 
 
