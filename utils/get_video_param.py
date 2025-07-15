@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+import loguru
 
 
 def get_latest_file_path(folder_path, file_extension):
@@ -48,7 +49,7 @@ def get_video_param(file_path):
         '-show_error',
         file_path
     ]
-
+    loguru.logger.info(f"录制结果地址{file_path}")
     try:
         result = subprocess.run(
             cmd,
@@ -79,18 +80,18 @@ def get_video_param(file_path):
         if not video_stream:
             raise Exception("未找到视频流")
 
-        params = {
-            "format": video_info.get('format', {}).get('format_name'),
-            "duration": float(video_info.get('format', {}).get('duration', 0)),  # 单位秒
-            "bit_rate": int(video_info.get('format', {}).get('bit_rate', 0)) // 1024,  # 单位 kbps
-            "width": int(video_stream.get('width')),
-            "height": int(video_stream.get('height')),
-            "fps": eval(video_stream.get('r_frame_rate')),  # 如 "24000/1001" -> 23.98
-            "codec": video_stream.get('codec_name'),
-            "pixel_format": video_stream.get('pix_fmt'),
-            "frame_count": int(video_stream.get('nb_frames', 0)),
-            "rotate": video_stream.get('tags', {}).get('rotate')
-        }
+        params = [
+            "format:"+video_info.get('format', {}).get('format_name'),
+            "duration:"+video_info.get('format', {}).get('duration', 0),  # 单位秒
+            "bit_rate:"+str(int(video_info.get('format', {}).get('bit_rate', 0)) // 1024),  # 单位 kbps
+            "width:"+str(video_stream.get('width')),
+            "height:"+str(video_stream.get('height')),
+            "fps:"+str(eval(video_stream.get('r_frame_rate'))),  # 如 "24000/1001" -> 23.98
+            "codec:"+video_stream.get('codec_name'),
+            "pixel_format:"+video_stream.get('pix_fmt'),
+            "frame_count:"+str(video_stream.get('nb_frames', 0)),
+            "rotate:"+str(video_stream.get('tags', {}).get('rotate'))
+        ]
 
         return params
 

@@ -79,7 +79,7 @@ def modify_config(formate, quality, frame_rate, frame_rate_mode, gpu_mode):
     with open(r"C:\Users\admini\AppData\Local\EaseUS\RecExperts\EreOptionsSettings.ini", 'w') as f:
         config.write(f)
 
-    loguru.logger.info("修改ere设置配置文件成功")
+    loguru.logger.info(f"修改ere设置配置文件成功:{formate} {quality} {frame_rate} {frame_rate_mode} {gpu_mode}")
 
 if __name__ == '__main__':
     modify_save_config(r'E:\python\wingui\case\2025_07_11_101550')

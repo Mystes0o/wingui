@@ -171,6 +171,7 @@ class WindowsManagerMonitoring:
                 if elapsed_time >= total_time:
                     break  # 如果超过了设定的时间则退出循环
             if self.event.is_set():
+                logger.info("标志位线程结束")
                 break  # 线程结束
 
             # CPU 使用率
@@ -202,6 +203,7 @@ class WindowsManagerMonitoring:
         return result
 
     def monitoring_start(self):
+        self.event.clear()
         self.result_queue = queue.Queue()
         monitoring_thread = threading.Thread(target=self._wrap_get_resource_usage)
         monitoring_thread.start()

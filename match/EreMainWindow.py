@@ -23,14 +23,14 @@ class EreMainWindow:
     # 启动ere
     # os.startfile(r"C:\Program Files (x86)\EaseUS\RecExperts\bin\RecExperts.exe")
     subprocess.Popen([r"C:\Program Files (x86)\EaseUS\RecExperts\bin\RecExperts.exe"])
-    ereMainWindow = auto.WindowControl(Name="EaseUS RecExperts")
+    ereMainWindow = auto.WindowControl(Name="EaseUS RecExperts", searchFromControl=auto.GetRootControl(), foundIndex=1)
     MyLibrary = ereMainWindow.CheckBoxControl(Name="My Library")
     StartRecording = ereMainWindow.CheckBoxControl(Name="Start Recording")
     EnterLicense = ereMainWindow.ButtonControl(Name="Enter License")
     Upgrade = ereMainWindow.ButtonControl(Name="Upgrade")
     Menu = ereMainWindow.CustomControl().ButtonControl(foundIndex=3)
-    Min = ereMainWindow.CustomControl().ButtonControl(foundIndex=4)
-    Close = ereMainWindow.CustomControl().ButtonControl(foundIndex=5)
+    Close = ereMainWindow.CustomControl().ButtonControl(foundIndex=4)
+    # Close = ereMainWindow.CustomControl().ButtonControl(foundIndex=5)
     ScheduleRecording = ereMainWindow.ButtonControl(Name="Schedule Recording")
     More = ereMainWindow.ButtonControl(Name="More")
 
@@ -45,6 +45,9 @@ class EreMainWindow:
     Audio = ereMainWindow.ButtonControl(Name="Audio")
     Webcam = ereMainWindow.ButtonControl(Name="Webcam")
 
+    # 折扣
+    Discount_close = ereMainWindow.ButtonControl(Name="Skip This Discount")
+
 
 class ScreenRecordWindow:
     # 初始化屏幕录制模块元素 ScreenRecordWindow
@@ -55,7 +58,7 @@ class ScreenRecordWindow:
 class ErePlayerWindow:
     # 播放器模块元素
     ErePlayerWindow = auto.WindowControl(Name="EaseUS RecExperts")
-    Close = ErePlayerWindow.CustomControl().ButtonControl(foundIndex=8)
+    Close = ErePlayerWindow.CustomControl().ButtonControl(foundIndex=7)
 
 class AudioRecordWindow:
     # 初始化音频录制模块元素 AudioRecordWindow
@@ -67,6 +70,8 @@ class AudioRecordWindow:
 
 if __name__ == '__main__':
     ere = EreMainWindow()
+    ere.Discount_close.Click()
+
 
 
 
