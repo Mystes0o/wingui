@@ -34,13 +34,17 @@ def full_screen_record(formate, quality, frame_rate, frame_rate_mode, gpu_mode, 
     ere_main_window.ButtonControl(Name="MainScreenFunButton").Click()
     ere_main_window.CheckBoxControl(Name="Start Recording")
 
-    screen_record_window = auto.WindowControl(Name="EaseUS RecExperts", searchFromControl=auto.GetRootControl(), foundIndex=1)
-    screen_record_window_button = screen_record_window.ButtonControl(foundIndex=11)
-    if screen_record_window_button.Exists(maxSearchSeconds=5):
-        screen_record_window_button.Click()
-    else:
-        loguru.logger.error('未找到录制按钮')
-        return 0
+    # screen_record_window = auto.WindowControl(Name="EaseUS RecExperts", searchFromControl=auto.GetRootControl(), foundIndex=1)
+    # screen_record_window_button = screen_record_window.ButtonControl(foundIndex=11)
+    # if screen_record_window_button.Exists(maxSearchSeconds=5):
+    #     screen_record_window_button.Click()
+    # else:
+    #     loguru.logger.error('未找到录制按钮')
+    #     return 0
+
+    # 快捷键录制
+    time.sleep(1)
+    send_key('{F9}')
 
     # 记录信息
     loguru.logger.info('录制' + str(video_len) +'秒')
